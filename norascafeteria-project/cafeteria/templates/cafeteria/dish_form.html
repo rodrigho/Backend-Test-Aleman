@@ -1,0 +1,56 @@
+{% extends 'cafeteria/base.html' %}
+
+{% block 'body' %}
+
+{% load widget_tweaks %}
+
+    <div class="container">
+        <br>
+        <h4>Add a new dish</h4>
+
+        <h6 class="text-success">{{ note }}</h6>
+        {% if created_dish_pk %}
+            <a href="{% url 'edit_dish' created_dish_pk %}">Edit dish</a>
+        {% endif %}
+
+        <form action="{% url 'dish_form' %}" method="post">
+            {% csrf_token %}
+            {% for field in dish_form %}
+                <div class="form-group">
+                {{ field.errors }}
+                {{ field.label_tag }}
+                {% if field.name == 'date' %}
+                    <div class="input-group date" id="datetimepicker1" data-target-input="nearest">
+                      {{ field }}
+                      <div class="input-group-append" data-target="#datetimepicker1" data-toggle="datetimepicker">
+                        <div class="input-group-text"><i class="fa fa-calendar"></i></div>
+                      </div>
+                    </div>
+                {% else %}
+                    {% render_field field class="form-control" %}
+                {% endif %}
+                </div>
+            {% endfor %}
+            <input type="submit" class="btn btn-danger" value="Add dish">
+        </form>
+
+        <br><br>
+        <h4>List of available dishes</h4>
+        <br>
+        <div class="table-responsive">
+            <table class="table table-striped">
+            {% for dish in all_dishes %}
+            <tr><td>{{ forloop.counter }}</td><td>{{ dish.name }}</td></tr>
+            {% endfor %}
+            </table>
+        </div>
+
+        <br><br>
+        <a href="{% url 'menu_form' %}">Return to the menu</a>
+
+    </div>
+
+{% endblock %}
+
+
+

@@ -1,0 +1,63 @@
+{% extends 'cafeteria/base.html' %}
+
+{% block 'body' %}
+
+{% load widget_tweaks %}
+
+    <div class="container">
+
+        <h1>Hello Nora</h1>
+
+        <h6 class="text-success">{{ note }}</h6>
+
+        <form action="{% url 'menu_form' %}" method="post">
+            {% csrf_token %}
+
+            {% for field in menu_form %}
+                <div class="form-group ">
+                <div class="text-danger">{{ field.errors }}</div>
+                {{ field.label_tag }}
+                {% if field.name == 'date' %}
+                    <div class="input-group date" id="datetimepicker1" data-target-input="nearest">
+                      {{ field }}
+                      <div class="input-group-append" data-target="#datetimepicker1" data-toggle="datetimepicker">
+                        <div class="input-group-text"><i class="fa fa-calendar"></i></div>
+                      </div>
+                    </div>
+                {% else %}
+
+                    {% if field.name == 'dishes' %}
+                        <a href="{% url 'dish_form' %}"> <i class="fa fa-commenting-o text-light fa-lg"></i> + Add more dishes?</a>
+                        {% render_field field class="list-unstyled" multiple="multiple" %}
+
+                    {% else %}
+                        {% render_field field class="form-control" style="height:100px;" %}
+                    {% endif %}
+                {% endif %}
+                </div>
+            {% endfor %}
+
+            <input type="submit" class="btn btn-primary" value="Create menu">
+        </form>
+
+        {% if created_menu %}
+            <div class="form-group">
+            <br><br>
+            <h4>Menu preview for {{ created_menu.date }}</h4>
+            <br>
+            <p>{{ created_menu.detail }}</p>
+            <ul class="list-group">
+            {% for dish in created_menu.dishes.all %}
+
+                <li class="list-group-item">Option {{ forloop.counter }}: {{ dish.name }}</li>
+
+            {% endfor %}
+            </ul>
+            </div>
+        {% endif %}
+
+    </div>
+{% endblock %}
+
+
+

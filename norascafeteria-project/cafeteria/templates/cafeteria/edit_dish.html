@@ -1,0 +1,37 @@
+{% extends 'cafeteria/base.html' %}
+
+{% block 'body' %}
+
+{% load widget_tweaks %}
+
+    <div class="container">
+        <br>
+        <h4>Edit this Dish</h4>
+
+        <h6>{{ note }}</h6>
+        <form action="{% url 'edit_dish' dish.id %}" method="post">
+            {% csrf_token %}
+            {% for field in dish_form %}
+                <div class="form-group">
+                {{ field.errors }}
+                {{ field.label_tag }}
+                {% if field.name == 'date' %}
+                    <div class="input-group date" id="datetimepicker1" data-target-input="nearest">
+                      {{ field }}
+                      <div class="input-group-append" data-target="#datetimepicker1" data-toggle="datetimepicker">
+                        <div class="input-group-text"><i class="fa fa-calendar"></i></div>
+                      </div>
+                    </div>
+                {% else %}
+                    {% render_field field class="form-control" %}
+                {% endif %}
+                </div>
+            {% endfor %}
+            <input type="submit" class="btn btn-danger" value="Edit dish">
+        </form>
+
+        <br><br>
+        <a href="{% url 'dish_form' %}">Return to the dish page</a>
+    </div>
+
+{% endblock %}
