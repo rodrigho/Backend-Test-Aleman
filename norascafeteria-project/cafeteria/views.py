@@ -92,25 +92,16 @@ def see_orders(request):
     if role != 'admin':
         return render(request, 'cafeteria/home.html')
 
-    form = MenuForm()
-    if request.method == 'POST':
-        filled_form = MenuForm(request.POST)
-        if filled_form.is_valid():
-            created_menu = filled_form.save()
-            date = created_menu.date
-            note = f'Menu has been created for {date}!'
-            filled_form = MenuForm()
-        else:
-            date = None
-            note = f'This menu could not be added, please try again!'
-            created_menu = None
-        return render(request, 'cafeteria/orders.html', {
-            'menu_form': filled_form,
-            'date': date,
-            'note': note,
-            'created_menu': created_menu
-        })
-    return render(request, 'cafeteria/orders.html', {'menu_form': form})
+    date = localtime(now()).date()
+    orders = None
+    if request.method == 'GET':
+        try:
+            orders = Order.objects.filter(created_at=date.strftime("%Y-%m-%d"))
+            for order in orders:
+                print(f'{order.dish.name}')
+        except Exception as ex:
+            print(f'Error orders: {ex}')
+    return render(request, 'cafeteria/orders.html', {'orders': orders})
 
 
 # Employee content

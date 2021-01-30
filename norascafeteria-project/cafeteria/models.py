@@ -38,7 +38,7 @@ class Menu(models.Model):
 class Order(models.Model):
     dish = models.ForeignKey(Dish, on_delete=models.CASCADE, blank=True, null=True)
     employee = models.ForeignKey(User, on_delete=models.CASCADE, blank=True, null=True)
-    customizations = models.CharField(max_length=256, default='')
+    customizations = models.CharField(max_length=256, default='', blank=True, null=True)
     created_at = models.DateField(default=localtime(now()).date().strftime("%Y-%m-%d"), null=True)
 
     class Meta:

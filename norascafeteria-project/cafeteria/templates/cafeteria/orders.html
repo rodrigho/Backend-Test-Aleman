@@ -1,0 +1,43 @@
+{% extends 'cafeteria/base.html' %}
+
+{% block 'body' %}
+
+{% load widget_tweaks %}
+
+    <div class="container">
+
+        <h4>Employee's orders for today</h4>
+
+
+
+        <div class="form-group">
+        <br><br>
+
+        <div class="table-responsive">
+            <table class="table table-striped">
+            <tr>
+                <th>#</th>
+                <th>User</th>
+                <th>Name</th>
+                <th>Dish</th>
+                <th>Details</th>
+            </tr>
+            {% for order in orders %}
+            <tr>
+                <td>{{ forloop.counter }}</td>
+                <td>{{ order.employee.username }}</td>
+                <td>{{ order.employee.first_name }}</td>
+                <td>{{ order.dish.name }}</td>
+                <td>{{ order.customizations }}</td>
+            </tr>
+            {% endfor %}
+            </table>
+        </div>
+
+        </div>
+
+    </div>
+{% endblock %}
+
+
+
