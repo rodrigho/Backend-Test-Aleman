@@ -206,8 +206,11 @@ def order(request, user, menu, pk):
             try:
                 created_order = Order.objects.get(employee=user, created_at=date.strftime("%Y-%m-%d"))
                 created_order.dish = dish
-                created_order.customizations = form.cleaned_data['customizations']
+                created_order.customizations = request.POST.get('customizations')
                 created_order.save()
+                note = f'You order has been updated to: {dish.name}'
+                if created_order.customizations and created_order.customizations.strip() != '':
+                    note = f'{note} | {created_order.customizations.strip()}'
             except ObjectDoesNotExist as e:
                 pass
             except MultipleObjectsReturned as e:
@@ -217,17 +220,18 @@ def order(request, user, menu, pk):
                 note = 'Error updating your dish, please try again'
                 have_errors = True
 
-            try:
-                created_order = Order.objects.create(
-                    dish=dish,
-                    employee=user,
-                    customizations=form.cleaned_data['customizations']
-                )
-                note = f'You have ordered {dish.name}!'
-                if created_order.customizations and created_order.customizations.strip() != '':
-                    note = f'{note} | {created_order.customizations.strip()}'
-            except Exception as e:
-                note = 'Error ordering your dish, please try again'
+            if not created_order:
+                try:
+                    created_order = Order.objects.create(
+                        dish=dish,
+                        employee=user,
+                        customizations=form.cleaned_data['customizations']
+                    )
+                    note = f'You have ordered {dish.name}!'
+                    if created_order.customizations and created_order.customizations.strip() != '':
+                        note = f'{note} | {created_order.customizations.strip()}'
+                except Exception as e:
+                    note = 'Error ordering your dish, please try again'
         else:
             note = f'Please choose a dish!'
             have_errors = True
