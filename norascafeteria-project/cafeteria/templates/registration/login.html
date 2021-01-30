@@ -1,7 +1,32 @@
-<!-- templates/registration/login.html -->
-<h2>Log In</h2>
-<form method="post">
-  {% csrf_token %}
-  {{ form.as_p }}
-  <button type="submit">Log In</button>
-</form>
+{% extends 'cafeteria/base.html' %}
+
+{% block 'body' %}
+    {% load widget_tweaks %}
+    {% load static %}
+    <div class="d-flex justify-content-start">
+        <div class="menu-image">
+            <div class="col-auto">
+                <img src="{% static 'images/home_img.jpg' %}" alt="Nora's Cafeteria" class="img-fluid">
+            </div>
+        </div>
+        <div class="menu-text">
+            <h2 class="main-title text-left">Log In</h2>
+            <hr class="hr-style-left" />
+            <br>
+            <form method="post">
+                {% csrf_token %}
+                {% for field in form %}
+                <div class="form-group">
+                {{ field.errors }}
+                {{ field.label_tag }}
+                {% render_field field class="form-control" %}
+                </div>
+                {% endfor %}
+                <input type="submit" class="btn btn-info" value="Log In">
+            </form>
+        </div>
+    </div>
+    <div class="card-footer w-100 text-muted">
+        Footer stating cats are CUTE little animals
+    </div>
+{% endblock %}
