@@ -7,14 +7,36 @@ from .models import Dish, User, Menu, Order
 
 
 def home(request):
-    return render(request, 'cafeteria/home.html')
+    date = localtime(now()).date()
+    menu = None
+    try:
+        menu = Menu.objects.get(date=date)
+    except Exception as ex:
+        print(f'Error: {ex}')
+
+    is_authenticated = False
+    is_admin = False
+
+    if request.user.is_authenticated:
+        print('User authenticated')
+        is_authenticated = True
+
+        role = request.user.role.lower()
+        if role == 'admin':
+            is_admin = True
+
+    return render(request, 'cafeteria/home.html', {
+        'menu': menu,
+        'is_authenticated': is_authenticated,
+        'is_admin': is_admin
+    })
 
 
 @login_required
 def dish_form(request):
     role = request.user.role.lower()
     if role != 'admin':
-        return render(request, 'cafeteria/home.html')
+        return home(request)
 
     form = DishForm()
     all_dishes = Dish.objects.all()
@@ -63,7 +85,7 @@ def edit_dish(request, pk):
 def menu_form(request):
     role = request.user.role.lower()
     if role != 'admin':
-        return render(request, 'cafeteria/home.html')
+        return home(request)
 
     form = MenuForm()
     if request.method == 'POST':
@@ -90,7 +112,7 @@ def menu_form(request):
 def see_orders(request):
     role = request.user.role.lower()
     if role != 'admin':
-        return render(request, 'cafeteria/home.html')
+        return home(request)
 
     date = localtime(now()).date()
     orders = None

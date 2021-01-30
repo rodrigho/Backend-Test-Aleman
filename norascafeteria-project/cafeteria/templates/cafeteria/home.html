@@ -1,8 +1,45 @@
 {% extends 'cafeteria/base.html' %}
 
 {% block 'body' %}
-    <div class="text-center">
-        {% load static %}
-        <img src="{% static 'images/home_img.jpg' %}" class="img-fluid" alt="Nora's Cafeteria">
+    {% load static %}
+    <div class="d-flex justify-content-start">
+        <div class="menu-image">
+            <div class="col-auto">
+                <img src="{% static 'images/home_img.jpg' %}" alt="Nora's Cafeteria" class="img-fluid">
+            </div>
+        </div>
+        <div class="menu-text">
+
+            {% if menu %}
+
+                <h2 class="main-title text-left">Today's Menu</h2>
+                <hr class="hr-style-left" />
+                {% for dish in menu.dishes.all %}
+                    <div class="menu-content d-flex space-between">
+                        <p style="font-weight: bold;">Option {{ forloop.counter }}:</p>
+                        &nbsp;
+                        <p class="menu-menu">{{ dish.name }}</p>
+                    </div>
+                {% endfor %}
+                <br><br>
+                {% if is_admin %}
+                    <a href="{% url 'menu_form' %}">Edit menu?</a>
+                {% else %}
+                    <a href="{% url 'order_form' %}">Order a dish?</a>
+                {% endif %}
+            {% else %}
+                <h2 class="main-title text-left">The menu is not ready yet</h2>
+                <hr class="hr-style-left" />
+                <br><br>
+                {% if is_admin %}
+                    <a href="{% url 'menu_form' %}">Create a menu?</a>
+                {% endif %}
+            {% endif %}
+
+
+        </div>
+    </div>
+    <div class="card-footer w-100 text-muted">
+        Footer stating cats are CUTE little animals
     </div>
 {% endblock %}
