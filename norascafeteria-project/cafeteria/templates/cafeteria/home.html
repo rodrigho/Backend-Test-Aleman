@@ -25,7 +25,7 @@
                 {% if is_admin %}
                     <a href="{% url 'menu_form' %}">Edit menu?</a>
                 {% else %}
-                    <a href="{% url 'order_form' %}">Order a dish?</a>
+                    <a href="{% url 'menu' %}">Order a dish?</a>
                 {% endif %}
             {% else %}
                 <h2 class="main-title text-left">The menu is not ready yet</h2>

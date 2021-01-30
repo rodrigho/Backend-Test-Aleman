@@ -1,5 +1,6 @@
 from django.contrib.auth.decorators import login_required
-from django.shortcuts import render
+from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
+from django.shortcuts import render, redirect
 from django.utils.timezone import now, localtime
 
 from .forms import DishForm, MenuForm, OrderForm
@@ -129,112 +130,115 @@ def see_orders(request):
 
 # Employee content
 # Here are all the views that are allowed to the employee
-def allow_order():
+def allow_order(allow_hour):
     datetime = localtime(now())
-    return datetime.hour < 11
+    return datetime.hour < allow_hour
+
 
 @login_required
-def order(request):
-    form = OrderForm()
-
-    username = request.user.username
-    user = User.objects.get(username=username)
-
+def redirect_uuid(request):
     date = localtime(now()).date()
-
+    pk = 'null'
     try:
         menu = Menu.objects.get(date=date)
-    except Exception as ex:
-        return render(request, 'employee/order.html', {
-            'order_form': None,
-            'user': user,
-            'menu': None,
-            'note': 'The has not been created yet!'
-        })
-
-    enable_form = allow_order()
-
-    if request.method == 'GET':
-        try:
-            order2 = Order.objects.get(employee=user, created_at=date.strftime("%Y-%m-%d"))
-            if order2:
-                return render(request, 'employee/order.html', {
-                    'order_form': form,
-                    'date': date,
-                    'note': 'You have already choose your dish',
-                    'user': user,
-                    'menu': menu,
-                    'created_order': order2,
-                    'enable_form': enable_form
-                })
-        except Exception as ex:
-            print(f'Error {ex}')
-            pass
-
-        if not enable_form:
-            return render(request, 'employee/order.html', {
-                'order_form': None,
-                'date': date,
-                'note': 'Good luck next time :(',
-                'user': user,
-                'menu': None,
-                'created_order': None,
-                'enable_form': enable_form
-            })
-
-    if request.method == 'POST':
-        filled_form = OrderForm(request.POST)
-        if filled_form.is_valid():
-
-            dish_id = request.POST.get('options')
-            dish = Dish.objects.get(pk=dish_id)
-
-            filled_form.employee = user
-            filled_form.dish = dish
-            created_order = Order.objects.create(
-                dish=dish,
-                employee=user,
-                customizations=filled_form.cleaned_data['customizations']
-            )
-
-            note = f'You have ordered {dish.name}!'
-            filled_form = OrderForm()
-        else:
-            date = None
-            note = f'Error, please try again!'
-            created_order = None
-        return render(request, 'employee/order.html', {
-            'order_form': filled_form,
-            'date': date,
-            'note': note,
-            'user': user,
-            'menu': menu,
-            'created_order': created_order
-        })
-
-    return render(request, 'employee/order.html', {
-        'order_form': form,
-        'user': user,
-        'menu': menu
-    })
+        pk = menu.uuid
+    except ObjectDoesNotExist as e:
+        pass
+    except MultipleObjectsReturned as e:
+        pass
+    return redirect(order_uuid, pk)
 
 
 @login_required
 def order_uuid(request, pk):
-    form = OrderForm()
-    print(pk)
     username = request.user.username
     user = User.objects.get(username=username)
 
-    date = localtime(now()).date()
     menu = None
     try:
         menu = Menu.objects.get(uuid=pk)
-    except Exception as ex:
-        print(ex)
+    except ObjectDoesNotExist as e:
+        pass
+    except MultipleObjectsReturned as e:
+        pass
+    return order(request, user, menu, pk)
+
+
+def order(request, user, menu, pk):
+    form = OrderForm()
+    date = localtime(now()).date()
+    note = None
+    have_errors = False
+    created_order = None
+
+    if not menu:
+        note = 'The menu has not been created yet!'
+
+    enable_form = allow_order(15)
+
+    if request.method == 'GET':
+        try:
+            created_order = Order.objects.get(employee=user, created_at=date.strftime("%Y-%m-%d"))
+            form = OrderForm(instance=created_order)
+            note = f'You have ordered {created_order.dish.name}'
+            if created_order.customizations and created_order.customizations.strip() != '':
+                note = f'{note} | {created_order.customizations.strip()}'
+        except ObjectDoesNotExist as e:
+            pass
+        except MultipleObjectsReturned as e:
+            note = 'There are more than 1 order, please contact Nora'
+            have_errors = True
+
+        if not enable_form and not created_order:
+            note = 'Too late to order :('
+            have_errors = True
+
+    elif request.method == 'POST':
+        form = OrderForm(request.POST)
+        if request.POST.get('options'):
+            dish_id = request.POST.get('options')
+            dish = Dish.objects.get(pk=dish_id)
+
+            form.employee = user
+            form.dish = dish
+
+            # Edit dish
+            try:
+                created_order = Order.objects.get(employee=user, created_at=date.strftime("%Y-%m-%d"))
+                created_order.dish = dish
+                created_order.customizations = form.cleaned_data['customizations']
+                created_order.save()
+            except ObjectDoesNotExist as e:
+                pass
+            except MultipleObjectsReturned as e:
+                note = 'There are more than 1 order, please contact Nora'
+                have_errors = True
+            except Exception as e:
+                note = 'Error updating your dish, please try again'
+                have_errors = True
+
+            try:
+                created_order = Order.objects.create(
+                    dish=dish,
+                    employee=user,
+                    customizations=form.cleaned_data['customizations']
+                )
+                note = f'You have ordered {dish.name}!'
+                if created_order.customizations and created_order.customizations.strip() != '':
+                    note = f'{note} | {created_order.customizations.strip()}'
+            except Exception as e:
+                note = 'Error ordering your dish, please try again'
+        else:
+            note = f'Please choose a dish!'
+            have_errors = True
     return render(request, 'employee/order.html', {
         'order_form': form,
+        'date': date,
+        'note': note,
         'user': user,
         'menu': menu,
-        'note': None
+        'created_order': created_order,
+        'have_errors': have_errors,
+        'enable_form': enable_form,
+        'pk': pk
     })

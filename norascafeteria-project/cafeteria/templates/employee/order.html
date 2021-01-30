@@ -8,38 +8,36 @@
 
         <h3>Hello {{ user.username }}</h3>
 
-        <h6 class="text-success">{{ note }}</h6>
+        {% if note %}
+            <br>
+            <h6 class="{% if have_errors %}text-danger{% else %}text-success{% endif %}">{{ note }}</h6>
+            <br>
+        {% endif %}
 
-        <form action="{% url 'order_form' %}" method="post">
+        <form action="{% url 'menu' pk %}" method="post">
             {% csrf_token %}
-
+            <fieldset {% if not enable_form %}disabled="disabled"{% endif %}>
             {% for field in order_form %}
                 <div class="form-group ">
-                <div class="text-danger">{{ field.errors }}</div>
-                {{ field.label_tag }}
-                {% if field.name == 'dish' %}
-                    <br>
-                    {% for dish in menu.dishes.all %}
-                        <input type="radio" id="option{{ dish.id }}" name="options" value="{{ dish.id }}">
-                        <label for="option{{ dish.id }}">Option {{ forloop.counter }}: {{ dish.name }}</label><br>
-                    {% endfor %}
-                {% else %}
-                    {% render_field field class="form-control" %}
-                {% endif %}
+                    {{ field.label_tag }}
+                    {% if field.name == 'dish' %}
+                        <br>
+                        {% for dish in menu.dishes.all %}
+                            {% if created_order and dish.name == created_order.dish.name %}
+                                <input type="radio" id="option{{ dish.id }}" name="options" value="{{ dish.id }}" checked="checked">
+                            {% else %}
+                                <input type="radio" id="option{{ dish.id }}" name="options" value="{{ dish.id }}">
+                            {% endif %}
+                            <label for="option{{ dish.id }}">Option {{ forloop.counter }}: {{ dish.name }}</label><br>
+                        {% endfor %}
+                    {% else %}
+                        {% render_field field class="form-control" %}
+                    {% endif %}
                 </div>
             {% endfor %}
-
-            <input type="submit" class="btn btn-primary" value="Order">
+            <input type="submit" class="btn btn-primary" value="{% if created_order %}Edit{% else %}Order{% endif %}">
+            </fieldset>
         </form>
-
-        {% if created_order %}
-            <div class="form-group">
-            <br><br>
-            <h4>This is what you have ordered: {{ created_order.dish.name }}</h4>
-            <br>
-            <p>{{ created_order.customizations }}</p>
-            </div>
-        {% endif %}
 
     </div>
 {% endblock %}
