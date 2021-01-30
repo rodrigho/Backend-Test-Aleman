@@ -11,6 +11,7 @@ def home(request):
     menu = None
     try:
         menu = Menu.objects.get(date=date)
+        print(f'Menu uuid: {menu.uuid}')
     except Exception as ex:
         print(f'Error: {ex}')
 
@@ -215,4 +216,25 @@ def order(request):
         'order_form': form,
         'user': user,
         'menu': menu
+    })
+
+
+@login_required
+def order_uuid(request, pk):
+    form = OrderForm()
+    print(pk)
+    username = request.user.username
+    user = User.objects.get(username=username)
+
+    date = localtime(now()).date()
+    menu = None
+    try:
+        menu = Menu.objects.get(uuid=pk)
+    except Exception as ex:
+        print(ex)
+    return render(request, 'employee/order.html', {
+        'order_form': form,
+        'user': user,
+        'menu': menu,
+        'note': None
     })

@@ -1,6 +1,5 @@
 from django.contrib import admin
-from django.urls import path, include
-from django.urls import path
+from django.urls import include, path
 from cafeteria import views
 
 urlpatterns = [
@@ -13,4 +12,5 @@ urlpatterns = [
 
     path('see_orders', views.see_orders, name='see_orders'),
     path('order', views.order, name='order_form'),
+    path('menu/<str:pk>', views.order_uuid, name='order_uuid'),
 ]
