@@ -1,5 +1,6 @@
 from django.contrib.auth.models import UserManager, AbstractUser, PermissionsMixin
 from django.db import models
+from django.utils.timezone import now, localtime
 
 ROLES = (
     ('admin', "Admin"),
@@ -35,12 +36,13 @@ class Menu(models.Model):
 
 
 class Order(models.Model):
-    dish = models.ForeignKey(Dish, on_delete=models.CASCADE,
-                             related_name='dishes', blank=True, null=True)
-    employee = models.ForeignKey(User, on_delete=models.CASCADE,
-                                 blank=True, null=True)
-    #employee = models.CharField(max_length=100, blank=True, null=True)
+    dish = models.ForeignKey(Dish, on_delete=models.CASCADE, blank=True, null=True)
+    employee = models.ForeignKey(User, on_delete=models.CASCADE, blank=True, null=True)
     customizations = models.CharField(max_length=256, default='')
+    created_at = models.DateField(default=localtime(now()).date().strftime("%Y-%m-%d"), null=True)
+
+    class Meta:
+        unique_together = ('employee', 'created_at',)
 
     def __str__(self):
-        return f'{self.employee.name} {self.dish.name}'
+        return f'{self.created_at}  {self.employee.username} {self.dish.name}'

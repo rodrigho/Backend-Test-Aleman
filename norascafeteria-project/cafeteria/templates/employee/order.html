@@ -1,0 +1,48 @@
+{% extends 'cafeteria/base.html' %}
+
+{% block 'body' %}
+
+{% load widget_tweaks %}
+
+    <div class="container">
+
+        <h3>Hello {{ user.username }}</h3>
+
+        <h6 class="text-success">{{ note }}</h6>
+
+        <form action="{% url 'order_form' %}" method="post">
+            {% csrf_token %}
+
+            {% for field in order_form %}
+                <div class="form-group ">
+                <div class="text-danger">{{ field.errors }}</div>
+                {{ field.label_tag }}
+                {% if field.name == 'dish' %}
+                    <br>
+                    {% for dish in menu.dishes.all %}
+                        <input type="radio" id="option{{ dish.id }}" name="options" value="{{ dish.id }}">
+                        <label for="option{{ dish.id }}">Option {{ forloop.counter }}: {{ dish.name }}</label><br>
+                    {% endfor %}
+                {% else %}
+                    {% render_field field class="form-control" %}
+                {% endif %}
+                </div>
+            {% endfor %}
+
+            <input type="submit" class="btn btn-primary" value="Order">
+        </form>
+
+        {% if created_order %}
+            <div class="form-group">
+            <br><br>
+            <h4>This is what you have ordered: {{ created_order.dish.name }}</h4>
+            <br>
+            <p>{{ created_order.customizations }}</p>
+            </div>
+        {% endif %}
+
+    </div>
+{% endblock %}
+
+
+

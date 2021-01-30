@@ -1,12 +1,5 @@
 from django import forms
-from .models import Dish, Menu
-
-
-'''class UserForm(forms.ModelForm):
-    class Meta:
-        model = User
-        fields = ['username', 'password']
-        labels = {'username': 'User name', 'password': 'Password'}'''
+from .models import Dish, Menu, Order
 
 
 class DishForm(forms.ModelForm):
@@ -37,3 +30,9 @@ class MenuForm(forms.ModelForm):
         fields = ['date', 'detail', 'dishes']
         labels = {'date': 'Pick a date to create a menu', 'detail': 'Message to employees', 'dishes': 'Options'}
 
+
+class OrderForm(forms.ModelForm):
+    class Meta:
+        model = Order
+        fields = ['dish', 'customizations']
+        labels = {'dish': 'Lunch options', 'customizations': 'Add customizations'}
