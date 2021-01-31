@@ -16,6 +16,9 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 
+# Replace correct values of your token here
+SLACK_API_TOKEN = 'xoxb-1707619210897-1707666014353-L681Edyt9VcUai20cAWdgGFL'
+CHANNEL = '#general'
 
 # Application definition
 
@@ -99,6 +102,7 @@ AUTH_USER_MODEL = 'cafeteria.User'
 LANGUAGE_CODE = 'en-us'
 
 TIME_ZONE = 'America/Santiago'
+ALLOWED_HOUR_TO_ORDER = 11
 
 USE_I18N = True
 
