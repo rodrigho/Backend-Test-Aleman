@@ -19,7 +19,8 @@ This technical test requires the design and implementation (using Django) of a m
 - Create and activate env
 - Config your slack settings
 - Run (`#use pip and python for WinOS`):
-  * `pip3 -r requirements.txt`
+  * `pip3 install -r requirements.txt`
+  * `python3 manage.py makemigrations`
   * `python3 manage.py migrate`
   * `python3 manage.py collectstatic`
   * `python3 manage.py runserver`
