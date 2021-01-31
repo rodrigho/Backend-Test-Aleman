@@ -288,7 +288,7 @@ def order(request, user, menu, pk):
                     created_order = Order.objects.create(
                         dish=dish,
                         employee=user,
-                        customizations=form.cleaned_data['customizations']
+                        customizations=request.POST.get('customizations')
                     )
                     note = f'You have ordered {dish.name}!'
                     if created_order.customizations and created_order.customizations.strip() != '':
