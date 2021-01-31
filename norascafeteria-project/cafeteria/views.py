@@ -1,3 +1,7 @@
+import logging
+import time
+
+from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
 from django.shortcuts import render, redirect
@@ -8,20 +12,24 @@ from .models import Dish, User, Menu, Order
 from .slackapi import send_async_notification
 
 
+# This retrieves a Python logging instance (or creates it)
+logger = logging.getLogger(__name__)
+
+
 def home(request):
     date = localtime(now()).date()
     menu = None
     try:
         menu = Menu.objects.get(date=date)
-        print(f'Menu uuid: {menu.uuid}')
-    except Exception as ex:
-        print(f'Error: {ex}')
+        logger.info(f'Menu uuid: {menu.uuid}')
+    except Exception as e:
+        logger.error(f"Error: {e}")
 
     is_authenticated = False
     is_admin = False
 
     if request.user.is_authenticated:
-        print('User authenticated')
+        logger.info('User authenticated')
         is_authenticated = True
 
         role = request.user.role.lower()
@@ -116,32 +124,18 @@ def menu_form(request):
         have_errors = True
         pass
 
-    if request.method == 'GET':
-        if menu:
-            form = MenuForm(instance=menu)
-    elif request.method == 'POST':
-        temp_form = MenuForm(request.POST)
-
-        # Edit today's menu
-        if menu and request.POST.get('date') == date.strftime('%Y-%m-%d'):
-            if 'detail' in temp_form.cleaned_data:
-                menu.detail = temp_form.cleaned_data['detail']
-            if 'dishes' in temp_form.cleaned_data:
-                menu.dishes.set(temp_form.cleaned_data['dishes'])
-            menu.notification_sent = False
-            menu.save()
-            form = MenuForm(instance=menu)
-            note = f'Menu has been updated for {date}!'
-
+    if request.method == 'POST':
+        form = MenuForm(request.POST)
         # Create a new menu
-        elif temp_form.is_valid():
-            menu = temp_form.save()
+        if form.is_valid():
+            menu = form.save()
             date = menu.date
-            form = MenuForm(instance=menu)
             note = f'Menu has been created for {date}!'
         else:
             note = f'Menu could not be added, please try again!'
             have_errors = True
+        # Clean fields
+        form = MenuForm()
     return render(request, 'cafeteria/menu_form.html', {
         'menu_form': form,
         'date': date,
@@ -149,6 +143,28 @@ def menu_form(request):
         'menu': menu,
         'have_errors': have_errors
     })
+
+
+@login_required
+def edit_menu(request, pk):
+    role = request.user.role.lower()
+    if role != 'admin':
+        return render(request, 'cafeteria/home.html')
+
+    menu = Menu.objects.get(pk=pk)
+    form = MenuForm(instance=menu)
+    if request.method == 'POST':
+        menu.notification_sent = False
+        filled_form = MenuForm(request.POST, instance=menu)
+        if filled_form.is_valid():
+            filled_form.save()
+            form = filled_form
+            note = 'Menu was edited successfully!'
+        else:
+            note = 'Menu was not updated, please try again'
+        return render(request, 'cafeteria/edit_menu.html', {'menu_form': form, 'menu': menu, 'note': note})
+    return render(request, 'cafeteria/edit_menu.html', {'menu_form': form, 'menu': menu})
+
 
 
 @login_required
@@ -162,10 +178,8 @@ def see_orders(request):
     if request.method == 'GET':
         try:
             orders = Order.objects.filter(created_at=date.strftime("%Y-%m-%d"))
-            for order in orders:
-                print(f'{order.dish.name}')
-        except Exception as ex:
-            print(f'Error orders: {ex}')
+        except Exception as e:
+            logger.error(f"Error: {e}")
     return render(request, 'cafeteria/orders.html', {'orders': orders})
 
 
@@ -216,7 +230,7 @@ def order(request, user, menu, pk):
     if not menu:
         note = 'The menu has not been created yet!'
 
-    enable_form = allow_order(24)
+    enable_form = allow_order(settings.ALLOWED_HOUR_TO_ORDER)
 
     if request.method == 'GET':
         try:
@@ -258,9 +272,11 @@ def order(request, user, menu, pk):
             except MultipleObjectsReturned as e:
                 note = 'There are more than 1 order, please contact Nora'
                 have_errors = True
+                logger.error(f"Error: {e}")
             except Exception as e:
                 note = 'Error updating your dish, please try again'
                 have_errors = True
+                logger.error(f"Error: {e}")
 
             if not created_order:
                 try:
@@ -274,6 +290,7 @@ def order(request, user, menu, pk):
                         note = f'{note} | {created_order.customizations.strip()}'
                 except Exception as e:
                     note = 'Error ordering your dish, please try again'
+                    logger.error(f"Error: {e}")
         else:
             note = f'Please choose a dish!'
             have_errors = True

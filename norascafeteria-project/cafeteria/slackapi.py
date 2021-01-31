@@ -1,8 +1,13 @@
 import asyncio
+import logging
 
 from django.conf import settings
 from slack import WebClient
 from slack.errors import SlackApiError
+
+
+# This retrieves a Python logging instance (or creates it)
+logger = logging.getLogger(__name__)
 
 
 def send_async_notification(message):
@@ -18,16 +23,10 @@ def send_async_notification(message):
 
     loop = asyncio.get_event_loop()
     try:
-        # run_until_complete returns the Future's result, or raise its exception.
-        response = loop.run_until_complete(future)
-        assert response["message"]["text"] == message
+        loop.run_until_complete(future)
     except SlackApiError as e:
-        assert e.response["ok"] is False
-        assert e.response["error"]  # str like 'invalid_auth', 'channel_not_found'
-        print(f"Got an error: {e.response['error']}")
+        logger.error(f"Got an error: {e}")
     except Exception as e:
-        print(f"Error {e}")
+        logger.error(f"Error {e}")
     finally:
         loop.close()
-
-    print("Done")
