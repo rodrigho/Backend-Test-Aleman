@@ -1,8 +1,11 @@
 from http import HTTPStatus
+
+from django.core import serializers
 from django.test import TestCase
 from uuid import UUID
 from django.utils.timezone import now, localtime
 from django.db import IntegrityError
+from django.test import Client
 
 from .models import Dish, User, Menu, Order
 from .forms import DishForm, MenuForm, OrderForm
@@ -146,3 +149,173 @@ class OrderFormTest(TestCase):
         self.assertEqual(form.errors["dish"], ["This field is required."])
 
 
+# All View tests
+class HomeViewTest(TestCase):
+
+    def setUp(self):
+        user = User.objects.create(username='testuser', password="1234", role="admin", first_name="User Name")
+        user.set_password('1234')
+        user.save()
+        self.response = self.client.login(username='testuser', password='1234')
+
+    def test_get_home_view(self):
+        response = self.client.get("/")
+        self.assertEqual(response.status_code, HTTPStatus.OK)
+        self.assertContains(response, "Nora's Cafeteria", html=True)
+        self.assertContains(response, "Welcome, User Name", html=True)
+
+        self.client.logout()
+        response = self.client.get("/")
+        self.assertContains(response, "Log in", html=True)
+
+
+class DishViewTest(TestCase):
+
+    def setUp(self):
+        user = User.objects.create(username='testuser', password="1234", role="admin")
+        user.set_password('1234')
+        user.save()
+        self.response = self.client.login(username='testuser', password='1234')
+
+    def test_get_dish_view(self):
+        response = self.client.get("/dish_form")
+        self.assertEqual(response.status_code, HTTPStatus.OK)
+        self.assertContains(response, "Add a new dish", html=True)
+
+    def test_post_dish_view(self):
+        response = self.client.post("/dish_form", data={"name": "foo"})
+        self.assertEqual(response.status_code, HTTPStatus.OK)
+        self.assertContains(response, "Add a new dish", html=True)
+
+    def test_not_permission_dish_view(self):
+        self.client.logout()
+        response = self.client.get("/dish_form")
+        self.assertEqual(response.status_code, HTTPStatus.FOUND)
+
+
+class MenuViewTest(TestCase):
+
+    def setUp(self):
+        user = User.objects.create(username='testuser', password="1234", role="admin", first_name="Name")
+        user.set_password('1234')
+        user.save()
+
+        Dish.objects.create(name="Corn pie, Salad and Dessert")
+        Dish.objects.create(name="Premium chicken Salad and Dessert")
+        self.menu = Menu()
+        self.menu.detail = "Today's menu"
+        self.menu.date = localtime(now()).date()
+        self.menu.save()
+        self.menu.dishes.set(Dish.objects.all())
+        self.menu.save()
+
+        self.response = self.client.login(username='testuser', password='1234')
+
+    def test_get_menu_view(self):
+        response = self.client.get("/menu_form")
+        self.assertEqual(response.status_code, HTTPStatus.OK)
+        self.assertContains(response, "Hello Name", html=True)
+
+    def test_error_menu_view(self):
+        self.client.logout()
+        response = self.client.get("/menu_form")
+        self.assertEqual(response.status_code, HTTPStatus.FOUND)
+
+    def test_post_menu_view(self):
+        data = {'date': self.menu.date, 'detail': self.menu.detail, 'dishes': self.menu.dishes}
+        response = self.client.post("/menu_form", data=data)
+        self.assertEqual(response.status_code, HTTPStatus.OK)
+        self.assertContains(response, "Today's Menu", html=True)
+        self.assertContains(response, self.menu.dishes.first(), html=True)
+        self.assertContains(response, self.menu.dishes.last(), html=True)
+
+    def test_error_post_menu_view(self):
+        data = {'date': self.menu.date, 'detail': self.menu.detail, 'dishes': self.menu.dishes}
+        self.client.post("/menu_form", data=data)
+        response = self.client.post("/menu_form", data=data)
+        self.assertEqual(response.status_code, HTTPStatus.OK)
+        self.assertContains(response, "Menu could not be added, please try again!", html=True)
+
+    def test_get_menu_edit_view(self):
+        response = self.client.get(f"/menu_form/{self.menu.uuid}")
+        self.assertEqual(response.status_code, HTTPStatus.OK)
+        self.assertContains(response, "Hello Name, let's edit the menu", html=True)
+
+    def test_error_post_menu_edit_view(self):
+        data = {'date': self.menu.date, 'detail': 'No details', 'dishes': self.menu.dishes}
+        response = self.client.post(f"/menu_form/{self.menu.uuid}", data=data)
+        self.assertEqual(response.status_code, HTTPStatus.OK)
+        self.assertContains(response, "Menu was not updated, please try again", html=True)
+
+
+class SeeOrdersViewTest(TestCase):
+
+    def setUp(self):
+        user = User.objects.create(username='testuser', password="1234", role="admin")
+        user.set_password('1234')
+        user.save()
+        self.response = self.client.login(username='testuser', password='1234')
+
+    def test_get_dish_view(self):
+        response = self.client.get("/see_orders")
+        self.assertEqual(response.status_code, HTTPStatus.OK)
+        self.assertContains(response, "Employees' orders for today", html=True)
+        self.client.logout()
+        response = self.client.get("/see_orders")
+        self.assertEqual(response.status_code, HTTPStatus.FOUND)
+
+
+class OrderViewTest(TestCase):
+
+    def setUp(self):
+        self.user = User.objects.create(username='testuser', password="1234", role="employee", first_name="Employee")
+        self.user.set_password('1234')
+        self.user.save()
+
+        self.dish1 = Dish.objects.create(name="Corn pie, Salad and Dessert")
+        self.dish2 = Dish.objects.create(name="Premium chicken Salad and Dessert")
+        self.menu = Menu()
+        self.menu.detail = "Today's menu"
+        self.menu.date = localtime(now()).date()
+        self.menu.save()
+        self.menu.dishes.set(Dish.objects.all())
+        self.menu.save()
+
+        self.response = self.client.login(username=self.user.username, password='1234')
+
+    def test_get_order_view(self):
+        response = self.client.get(f"/menu/{self.menu.uuid}")
+        self.assertEqual(response.status_code, HTTPStatus.OK)
+        self.assertContains(response, "Hello Employee", html=True)
+
+    def test_get_order_requested_view(self):
+        order = Order()
+        order.customizations = ''
+        order.employee = self.user
+        order.dish = self.dish1
+        order.save()
+
+        response = self.client.get(f"/menu/{self.menu.uuid}")
+        self.assertEqual(response.status_code, HTTPStatus.OK)
+        self.assertContains(response, "You have ordered Corn pie, Salad and Dessert", html=True)
+
+    def test_post_request_order_view(self):
+        data = {'dish': self.dish2, 'employee': self.user, 'customizations': 'No tomatoes'}
+        response = self.client.post(f"/menu/{self.menu.uuid}", data=data)
+        self.assertEqual(response.status_code, HTTPStatus.OK)
+        self.assertContains(response, "Please choose a dish!", html=True)
+
+    def test_error_get_order_view(self):
+        response = self.client.get(f"/menu/0371577c-e15a-4466-88a2-f54fcace18a6")
+        self.assertEqual(response.status_code, HTTPStatus.NOT_FOUND)
+        self.client.logout()
+        response = self.client.get(f"/menu/{self.menu.uuid}")
+        self.assertEqual(response.status_code, HTTPStatus.FOUND)
+
+    def test_error_post_order_view(self):
+        data = {'dish': self.dish1, 'employee': self.user, 'customizations': 'No tomatoes'}
+        response = self.client.post(f"/menu/0371577c-e15a-4466-88a2-f54fcace18a6", data=data)
+        self.assertEqual(response.status_code, HTTPStatus.NOT_FOUND)
+        self.client.logout()
+        response = self.client.post(f"/menu/{self.menu.uuid}", data=data)
+        self.assertEqual(response.status_code, HTTPStatus.FOUND)
