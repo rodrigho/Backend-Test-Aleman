@@ -1,10 +1,9 @@
 import logging
-import time
 
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.utils.timezone import now, localtime
 
 from .forms import DishForm, MenuForm, OrderForm
@@ -78,7 +77,8 @@ def edit_dish(request, pk):
     if role != 'admin':
         return render(request, 'cafeteria/home.html')
 
-    dish = Dish.objects.get(pk=pk)
+    #dish = Dish.objects.get(pk=pk)
+    dish = get_object_or_404(Dish, pk=pk)
     form = DishForm(instance=dish)
     if request.method == 'POST':
         filled_form = DishForm(request.POST, instance=dish)
@@ -151,7 +151,8 @@ def edit_menu(request, pk):
     if role != 'admin':
         return render(request, 'cafeteria/home.html')
 
-    menu = Menu.objects.get(pk=pk)
+    #menu = Menu.objects.get(pk=pk)
+    menu = get_object_or_404(Menu, pk=pk)
     form = MenuForm(instance=menu)
     if request.method == 'POST':
         menu.notification_sent = False
@@ -211,7 +212,8 @@ def order_uuid(request, pk):
 
     menu = None
     try:
-        menu = Menu.objects.get(uuid=pk)
+        #menu = Menu.objects.get(uuid=pk)
+        menu = get_object_or_404(Menu, pk=pk)
     except ObjectDoesNotExist as e:
         pass
     except MultipleObjectsReturned as e:
