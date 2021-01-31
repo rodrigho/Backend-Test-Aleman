@@ -77,7 +77,6 @@ def edit_dish(request, pk):
     if role != 'admin':
         return render(request, 'cafeteria/home.html')
 
-    #dish = Dish.objects.get(pk=pk)
     dish = get_object_or_404(Dish, pk=pk)
     form = DishForm(instance=dish)
     if request.method == 'POST':
@@ -112,10 +111,16 @@ def menu_form(request):
 
         # Send async slack notification
         if request.method == 'GET' and request.GET.get('slack'):
-            send_async_notification(f"{menu.detail}:\nhttp://localhost:8000/menu/{menu.uuid}")
-            menu.notification_sent = True
-            menu.save()
-            return redirect(menu_form)
+            try:
+                send_async_notification(f"{menu.detail}:\nhttp://localhost:8000/menu/{menu.uuid}")
+                menu.notification_sent = True
+                menu.save()
+                return redirect(menu_form)
+            except Exception as e:
+                logger.error(e)
+                have_errors = True
+                note = f'Confirm your slack both credentials | Verify your both is in the {settings.CHANNEL} channel' \
+                       f' | Or contact support team '
 
     except ObjectDoesNotExist as e:
         pass
@@ -151,7 +156,6 @@ def edit_menu(request, pk):
     if role != 'admin':
         return render(request, 'cafeteria/home.html')
 
-    #menu = Menu.objects.get(pk=pk)
     menu = get_object_or_404(Menu, pk=pk)
     form = MenuForm(instance=menu)
     if request.method == 'POST':
@@ -212,7 +216,6 @@ def order_uuid(request, pk):
 
     menu = None
     try:
-        #menu = Menu.objects.get(uuid=pk)
         menu = get_object_or_404(Menu, pk=pk)
     except ObjectDoesNotExist as e:
         pass
