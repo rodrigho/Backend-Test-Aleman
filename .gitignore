@@ -61,3 +61,4 @@ target/
 venv/
 *.sqlite3
 migrations/
+static/
