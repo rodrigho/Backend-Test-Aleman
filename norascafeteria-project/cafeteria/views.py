@@ -129,6 +129,7 @@ def menu_form(request):
             if 'dishes' in temp_form.cleaned_data:
                 menu.dishes.set(temp_form.cleaned_data['dishes'])
             menu.notification_sent = False
+            menu.save()
             form = MenuForm(instance=menu)
             note = f'Menu has been updated for {date}!'
 
