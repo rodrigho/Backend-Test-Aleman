@@ -1,5 +1,11 @@
 # Data Broker Common Changelog
 
+#### [1.0.2] - 2021-01-31
+
+#### Changed
+- Fix error first time to order
+
+
 #### [1.0.1] - 2021-01-31
 
 #### Added
