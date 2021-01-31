@@ -5,7 +5,7 @@ from slack import WebClient
 from slack.errors import SlackApiError
 
 
-def sent_async_notification(message):
+def send_async_notification(message):
     client = WebClient(
         token=settings.SLACK_API_TOKEN,
         run_async=True

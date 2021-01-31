@@ -32,6 +32,7 @@ class Menu(models.Model):
     detail = models.TextField()
     dishes = models.ManyToManyField(Dish)
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    notification_sent = models.BooleanField(default=False)
 
     def __str__(self):
         return f'{self.date} {self.detail}'

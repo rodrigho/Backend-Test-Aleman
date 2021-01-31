@@ -5,6 +5,7 @@ from django.utils.timezone import now, localtime
 
 from .forms import DishForm, MenuForm, OrderForm
 from .models import Dish, User, Menu, Order
+from .slackapi import send_async_notification
 
 
 def home(request):
@@ -90,24 +91,63 @@ def menu_form(request):
         return home(request)
 
     form = MenuForm()
-    if request.method == 'POST':
-        filled_form = MenuForm(request.POST)
-        if filled_form.is_valid():
-            created_menu = filled_form.save()
-            date = created_menu.date
+    date = localtime(now()).date()
+    menu = None
+    note = None
+    have_errors = False
+
+    try:
+        menu = Menu.objects.get(date=date)
+        note = "Today's menu is ready"
+        if menu.notification_sent:
+            note = "Employees has been notified with today's menu"
+
+        # Send async slack notification
+        if request.method == 'GET' and request.GET.get('slack'):
+            send_async_notification(f"{menu.detail}:\nhttp://localhost:8000/menu/{menu.uuid}")
+            menu.notification_sent = True
+            menu.save()
+            return redirect(menu_form)
+
+    except ObjectDoesNotExist as e:
+        pass
+    except MultipleObjectsReturned as e:
+        note = 'There are more than one menu, please contact support team'
+        have_errors = True
+        pass
+
+    if request.method == 'GET':
+        if menu:
+            form = MenuForm(instance=menu)
+    elif request.method == 'POST':
+        temp_form = MenuForm(request.POST)
+
+        # Edit today's menu
+        if menu and request.POST.get('date') == date.strftime('%Y-%m-%d'):
+            if 'detail' in temp_form.cleaned_data:
+                menu.detail = temp_form.cleaned_data['detail']
+            if 'dishes' in temp_form.cleaned_data:
+                menu.dishes.set(temp_form.cleaned_data['dishes'])
+            menu.notification_sent = False
+            form = MenuForm(instance=menu)
+            note = f'Menu has been updated for {date}!'
+
+        # Create a new menu
+        elif temp_form.is_valid():
+            menu = temp_form.save()
+            date = menu.date
+            form = MenuForm(instance=menu)
             note = f'Menu has been created for {date}!'
-            filled_form = MenuForm()
         else:
-            date = None
-            note = f'This menu could not be added, please try again!'
-            created_menu = None
-        return render(request, 'cafeteria/menu_form.html', {
-            'menu_form': filled_form,
-            'date': date,
-            'note': note,
-            'created_menu': created_menu
-        })
-    return render(request, 'cafeteria/menu_form.html', {'menu_form': form})
+            note = f'Menu could not be added, please try again!'
+            have_errors = True
+    return render(request, 'cafeteria/menu_form.html', {
+        'menu_form': form,
+        'date': date,
+        'note': note,
+        'menu': menu,
+        'have_errors': have_errors
+    })
 
 
 @login_required
@@ -166,7 +206,8 @@ def order_uuid(request, pk):
 
 def order(request, user, menu, pk):
     form = OrderForm()
-    date = localtime(now()).date()
+    time = localtime(now())
+    date = time.date()
     note = None
     have_errors = False
     created_order = None
@@ -174,7 +215,7 @@ def order(request, user, menu, pk):
     if not menu:
         note = 'The menu has not been created yet!'
 
-    enable_form = allow_order(15)
+    enable_form = allow_order(24)
 
     if request.method == 'GET':
         try:
@@ -190,7 +231,7 @@ def order(request, user, menu, pk):
             have_errors = True
 
         if not enable_form and not created_order:
-            note = 'Too late to order :('
+            note = f'{time.time().strftime("%H:%M:%S")} - Too late to order :('
             have_errors = True
 
     elif request.method == 'POST':
@@ -237,7 +278,6 @@ def order(request, user, menu, pk):
             have_errors = True
     return render(request, 'employee/order.html', {
         'order_form': form,
-        'date': date,
         'note': note,
         'user': user,
         'menu': menu,

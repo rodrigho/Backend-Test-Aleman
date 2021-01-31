@@ -4,59 +4,71 @@
 
 {% load widget_tweaks %}
 
-    <div class="container">
-
-        <h1>Hello Nora</h1>
-
-        <h6 class="text-success">{{ note }}</h6>
-
-        <form action="{% url 'menu_form' %}" method="post">
-            {% csrf_token %}
-
-            {% for field in menu_form %}
-                <div class="form-group ">
-                <div class="text-danger">{{ field.errors }}</div>
-                {{ field.label_tag }}
-                {% if field.name == 'date' %}
-                    <div class="input-group date" id="datetimepicker1" data-target-input="nearest">
-                      {{ field }}
-                      <div class="input-group-append" data-target="#datetimepicker1" data-toggle="datetimepicker">
-                        <div class="input-group-text"><i class="fa fa-calendar"></i></div>
-                      </div>
-                    </div>
-                {% else %}
-
-                    {% if field.name == 'dishes' %}
-                        <a href="{% url 'dish_form' %}"> <i class="fa fa-commenting-o text-light fa-lg"></i> + Add more dishes?</a>
-                        {% render_field field class="list-unstyled" multiple="multiple" %}
-
-                    {% else %}
-                        {% render_field field class="form-control" style="height:100px;" %}
-                    {% endif %}
-                {% endif %}
-                </div>
-            {% endfor %}
-
-            <input type="submit" class="btn btn-primary" value="Create menu">
-        </form>
-
-        {% if created_menu %}
-            <div class="form-group">
-            <br><br>
-            <h4>Menu preview for {{ created_menu.date }}</h4>
+    <div class="d-flex justify-content-start">
+        <div class="container" style="margin-left: 12%; width: 50%;">
             <br>
-            <p>{{ created_menu.detail }}</p>
-            <ul class="list-group">
-            {% for dish in created_menu.dishes.all %}
+            <h3>Hello {{ user.username }}</h3>
 
-                <li class="list-group-item">Option {{ forloop.counter }}: {{ dish.name }}</li>
+            {% if note %}
+                <br>
+                <h6 class="{% if have_errors %}text-danger{% else %}text-success{% endif %}">{{ note }}</h6>
+                <br>
+            {% endif %}
 
-            {% endfor %}
-            </ul>
-            </div>
-        {% endif %}
+            <form action="{% url 'menu_form' %}" method="post">
+                {% csrf_token %}
 
+                {% for field in menu_form %}
+                    <div class="form-group ">
+                    <div class="text-danger">{{ field.errors }}</div>
+                    {{ field.label_tag }}
+                    {% if field.name == 'date' %}
+                        <div class="input-group date" id="datetimepicker1" data-target-input="nearest">
+                          {{ field }}
+                          <div class="input-group-append" data-target="#datetimepicker1" data-toggle="datetimepicker">
+                            <div class="input-group-text"><i class="fa fa-calendar"></i></div>
+                          </div>
+                        </div>
+                    {% else %}
+
+                        {% if field.name == 'dishes' %}
+                            <a href="{% url 'dish_form' %}"> <i class="fa fa-commenting-o text-light fa-lg"></i> + Add more dishes?</a>
+                            {% render_field field class="list-unstyled" multiple="multiple" %}
+
+                        {% else %}
+                            {% render_field field class="form-control" style="height:100px;" %}
+                        {% endif %}
+                    {% endif %}
+                    </div>
+                {% endfor %}
+                <input type="submit" style="width: 20%;" class="btn btn-primary" value="{% if not menu %}Create menu{% else %}Edit menu{% endif %}">
+            </form>
+            {% if menu %}
+                <br>
+                <form action="{% url 'menu_form' %}" method="get">
+                    <input type="submit"  style="width: 20%;" class="btn btn-warning" name="slack" {% if menu.notification_sent %}disabled{% endif %} value="Send slack notification" />
+                </form>
+            {% endif %}
+        </div>
+        <div align="left" style="margin-right: 10%;">
+            {% if menu %}
+                <br>
+                <h3 class="main-title text-left">Today's Menu</h3>
+                <hr class="hr-style-left" />
+                {% for dish in menu.dishes.all %}
+                    <div class="menu-content d-flex space-between">
+                        <p style="font-weight: bold;">Option {{ forloop.counter }}:</p>
+                        &nbsp;
+                        <p class="menu-menu">{{ dish.name }}</p>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <h3 class="main-title text-left">Today's menu is not ready yet</h3>
+                <hr class="hr-style-left" />
+            {% endif %}
+        </div>
     </div>
+
 {% endblock %}
 
 

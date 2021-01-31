@@ -9,10 +9,9 @@
             </div>
         </div>
         <div class="menu-text">
-
             {% if menu %}
-
-                <h2 class="main-title text-left">Today's Menu</h2>
+                <br>
+                <h3 class="main-title text-left">Today's Menu</h3>
                 <hr class="hr-style-left" />
                 {% for dish in menu.dishes.all %}
                     <div class="menu-content d-flex space-between">
@@ -35,8 +34,6 @@
                     <a href="{% url 'menu_form' %}">Create a menu?</a>
                 {% endif %}
             {% endif %}
-
-
         </div>
     </div>
     <div class="card-footer w-100 text-muted">

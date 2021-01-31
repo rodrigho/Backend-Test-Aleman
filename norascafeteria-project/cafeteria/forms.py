@@ -1,5 +1,6 @@
 from django import forms
 from .models import Dish, Menu, Order
+from django.utils.timezone import now, localtime
 
 
 class DishForm(forms.ModelForm):
@@ -11,6 +12,7 @@ class DishForm(forms.ModelForm):
 
 class MenuForm(forms.ModelForm):
     date = forms.DateField(
+        initial=localtime(now()).date(),
         label='Pick a date to create a menu',
         input_formats=['%Y-%m-%d'],
         widget=forms.DateTimeInput(attrs={
