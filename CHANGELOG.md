@@ -1,5 +1,19 @@
 # Data Broker Common Changelog
 
+
+#### [1.0.3] - 2021-01-31
+
+#### Changed
+- Url slack url
+
+#### Added
+- Url host from settings
+- Release files and documentation
+
+### Deleted
+- Slack token from settings
+
+
 #### [1.0.2] - 2021-01-31
 
 #### Changed

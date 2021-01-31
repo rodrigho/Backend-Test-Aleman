@@ -112,7 +112,7 @@ def menu_form(request):
         # Send async slack notification
         if request.method == 'GET' and request.GET.get('slack'):
             try:
-                send_async_notification(f"{menu.detail}:\nhttp://localhost:8000/menu/{menu.uuid}")
+                send_async_notification(f"{menu.detail}:\n{settings.HOST_URL}/menu/{menu.uuid}")
                 menu.notification_sent = True
                 menu.save()
                 return redirect(menu_form)

@@ -4,20 +4,17 @@ from pathlib import Path
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/3.1/howto/deployment/checklist/
-
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = '$q86-h5b6k@3&vwso1*3)jbo$b)fk$pbisuoxjt5rlt_sv2b-q'
+SECRET_KEY = 'SECRET_KEY'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
 ALLOWED_HOSTS = ['*']
+HOST_URL = 'http://localhost:8000'
 
 # Replace correct values of your token here
-SLACK_API_TOKEN = 'xoxb-1707619210897-1707666014353-upqMzL2o9ny6Vu4z3q9ATjoQ'
+SLACK_API_TOKEN = 'put your slack token here'
 CHANNEL = '#general'
 
 # Application definition
