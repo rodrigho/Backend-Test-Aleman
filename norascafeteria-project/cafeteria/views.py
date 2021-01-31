@@ -221,8 +221,8 @@ def order_uuid(request, pk):
 
 def order(request, user, menu, pk):
     form = OrderForm()
-    time = localtime(now())
-    date = time.date()
+    _time = localtime(now())
+    date = _time.date()
     note = None
     have_errors = False
     created_order = None
@@ -246,7 +246,7 @@ def order(request, user, menu, pk):
             have_errors = True
 
         if not enable_form and not created_order:
-            note = f'{time.time().strftime("%H:%M:%S")} - Too late to order :('
+            note = f'{_time.time().strftime("%H:%M:%S")} - Too late to order :('
             have_errors = True
 
     elif request.method == 'POST':
@@ -290,6 +290,7 @@ def order(request, user, menu, pk):
                         note = f'{note} | {created_order.customizations.strip()}'
                 except Exception as e:
                     note = 'Error ordering your dish, please try again'
+                    have_errors = True
                     logger.error(f"Error: {e}")
         else:
             note = f'Please choose a dish!'
