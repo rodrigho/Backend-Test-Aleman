@@ -1,0 +1,52 @@
+{% extends 'cafeteria/base.html' %}
+
+{% block 'body' %}
+
+{% load widget_tweaks %}
+
+    <div class="container">
+        <br>
+        <h3>Hello {{ user.username }}, let's edit the menu</h3>
+
+        {% if note %}
+            <br>
+            <h6 class="{% if have_errors %}text-danger{% else %}text-success{% endif %}">{{ note }}</h6>
+            <br>
+        {% endif %}
+
+        <form action="{% url 'edit_menu' menu.uuid %}" method="post">
+            {% csrf_token %}
+
+            {% for field in menu_form %}
+                <div class="form-group ">
+                <div class="text-danger">{{ field.errors }}</div>
+                {{ field.label_tag }}
+                {% if field.name == 'date' %}
+                    <div class="input-group date" id="datetimepicker1" data-target-input="nearest">
+                      {{ field }}
+                      <div class="input-group-append" data-target="#datetimepicker1" data-toggle="datetimepicker">
+                        <div class="input-group-text"><i class="fa fa-calendar"></i></div>
+                      </div>
+                    </div>
+                {% else %}
+
+                    {% if field.name == 'dishes' %}
+                        <a href="{% url 'dish_form' %}"> <i class="fa fa-commenting-o text-light fa-lg"></i> + Add more dishes?</a>
+                        {% render_field field class="list-unstyled" multiple="multiple" %}
+
+                    {% else %}
+                        {% render_field field class="form-control" style="height:100px;" %}
+                    {% endif %}
+                {% endif %}
+                </div>
+            {% endfor %}
+            <input type="submit" style="width: 20%;" class="btn btn-primary" value="Edit menu">
+        </form>
+        <br><br>
+        <a href="{% url 'menu_form' %}">Return to the menu page</a>
+    </div>
+
+{% endblock %}
+
+
+
