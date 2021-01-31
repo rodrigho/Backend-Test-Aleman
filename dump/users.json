@@ -1,0 +1,47 @@
+[
+  {
+      "model": "cafeteria.user",
+      "fields": {
+          "username": "nora",
+          "first_name": "Nora",
+          "password": "pbkdf2_sha256$216000$LJVrbNHeg99Q$kJpUw+fxVOg8Oa2DNF7DgKPvz8rfETeO0oQD0PJTbfw=",
+          "role": "admin"
+      }
+  },
+  {
+      "model": "cafeteria.user",
+      "fields": {
+          "username": "rodrigo",
+          "first_name": "Rodrigo",
+          "password": "pbkdf2_sha256$216000$qqYwePl7m9om$319BN1KT3ZnbCDg6d56YEuyoI8Es0q1nvVGPzI+33vA=",
+          "role": "employee"
+      }
+  },
+  {
+      "model": "cafeteria.user",
+      "fields": {
+          "username": "pepe",
+          "first_name": "Pepe",
+          "password": "pbkdf2_sha256$216000$XoVZsQlZBcx9$mC3u0X4o03uUzYIn/kYm12f73k8H68zXpVpTYszkDrg=",
+          "role": "employee"
+      }
+  },
+  {
+      "model": "cafeteria.user",
+      "fields": {
+          "username": "osvaldo",
+          "first_name": "Osvaldo",
+          "password": "pbkdf2_sha256$216000$XoVZsQlZBcx9$mC3u0X4o03uUzYIn/kYm12f73k8H68zXpVpTYszkDrg=",
+          "role": "employee"
+      }
+  },
+  {
+      "model": "cafeteria.user",
+      "fields": {
+          "username": "ale",
+          "first_name": "Ale",
+          "password": "pbkdf2_sha256$216000$XoVZsQlZBcx9$mC3u0X4o03uUzYIn/kYm12f73k8H68zXpVpTYszkDrg=",
+          "role": "employee"
+      }
+  }
+]

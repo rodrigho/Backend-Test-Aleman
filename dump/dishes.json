@@ -1,0 +1,44 @@
+[
+  {
+      "model": "cafeteria.dish",
+      "fields": {
+          "name": "Corn pie, Salad and Dessert."
+      }
+  },
+  {
+      "model": "cafeteria.dish",
+      "fields": {
+          "name": "Chicken Nugget Rice, Salad and Dessert."
+      }
+  },
+  {
+      "model": "cafeteria.dish",
+      "fields": {
+          "name": "Rice with hamburger, Salad and Dessert."
+      }
+  },
+  {
+      "model": "cafeteria.dish",
+      "fields": {
+          "name": "Premium chicken Salad and Dessert."
+      }
+  },
+  {
+      "model": "cafeteria.dish",
+      "fields": {
+          "name": "Steamed Corn and Beef Casserole"
+      }
+  },
+  {
+      "model": "cafeteria.dish",
+      "fields": {
+          "name": "Chilean Steak Sandwiche"
+      }
+  },
+  {
+      "model": "cafeteria.dish",
+      "fields": {
+          "name": "Poor Man’s Steak"
+      }
+  }
+]
