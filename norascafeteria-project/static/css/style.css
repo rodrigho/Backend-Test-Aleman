@@ -58,3 +58,13 @@ input[type=text]:focus, input[type=password]:focus {
 .btn:hover {
   opacity: 1;
 }
+
+.my-footer {
+  position: fixed;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  background-color: black;
+  color: white;
+  text-align: center;
+}
