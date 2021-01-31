@@ -8,10 +8,12 @@ The user can create a menu for whatever day. Current day is the default.
 The user must fill all fields. If there are not dishes, she can add more dishes in the below link `+Add more dishes?`.
 Those dishes are global to avoid reinserting each time a menu is required.
 
-After you have created a menu, she can edit it using `Edit menu?` button 
+After the menu is created, she can edit it using `Edit menu?` button.
+Each time the menu is edited, SHE CAN NOTIFY USERS, so user will be aware of the new menu changes. 
 
-When the menu is ready for current the, she can notify all user using Notify button, and this
-will send a slack message using a slack bot
+When the menu is ready for current the, she can notify all user using `Notify employee` button, and this
+will send a slack message using a slack bot.
+If the slack has not been configured, and error message is going to tell her.
 
 When employees have ordered, she can see their orders in the menu option `See orders` 
 
