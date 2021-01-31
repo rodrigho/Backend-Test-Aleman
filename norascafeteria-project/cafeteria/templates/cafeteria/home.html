@@ -22,7 +22,7 @@
                 {% endfor %}
                 <br><br>
                 {% if is_admin %}
-                    <a href="{% url 'menu_form' %}">Edit menu?</a>
+                    <a href="{% url 'edit_menu' menu.uuid %}">Edit menu?</a>
                 {% else %}
                     <a href="{% url 'menu' %}">Order a dish?</a>
                 {% endif %}
