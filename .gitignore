@@ -56,3 +56,8 @@ target/
 
 # ignore PyCharm settings
 .idea/
+
+# Virtal env
+venv/
+*.sqlite3
+migrations/
