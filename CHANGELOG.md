@@ -4,7 +4,7 @@
 #### [1.0.3] - 2021-01-31
 
 #### Changed
-- Url slack url
+- Url link to send via slack notification
 
 #### Added
 - Url host from settings
