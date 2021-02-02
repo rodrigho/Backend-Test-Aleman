@@ -1,4 +1,5 @@
 import logging
+from uuid import UUID
 
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
@@ -19,6 +20,7 @@ def home(request):
     date = localtime(now()).date()
     menu = None
     try:
+        # Display today's menu if exists
         menu = Menu.objects.get(date=date)
         logger.info(f'Menu uuid: {menu.uuid}')
     except Exception as e:
@@ -55,7 +57,8 @@ def dish_form(request):
         if filled_form.is_valid():
             created_dish = filled_form.save()
             created_dish_pk = created_dish.id
-            note = 'Dish %s was added!' % filled_form.cleaned_data['name']
+            note = f"Dish {filled_form.cleaned_data['name']} was added!"
+            # Clean the dish form to add another dish
             filled_form = DishForm()
         else:
             created_dish_pk = None
@@ -70,13 +73,14 @@ def dish_form(request):
 
 
 # Admin
-# This is managed by Nora
+# This is managed by Nora's cafeteria
 @login_required
 def edit_dish(request, pk):
+    note = None
     role = request.user.role.lower()
     if role != 'admin':
         return render(request, 'cafeteria/home.html')
-
+    # User will be redirected to 404 page is the dish to edit do not exist
     dish = get_object_or_404(Dish, pk=pk)
     form = DishForm(instance=dish)
     if request.method == 'POST':
@@ -87,8 +91,7 @@ def edit_dish(request, pk):
             note = 'Dish was edited successfully!'
         else:
             note = 'Dish was not updated, please try again'
-        return render(request, 'cafeteria/edit_dish.html', {'dish_form': form, 'dish': dish, 'note': note})
-    return render(request, 'cafeteria/edit_dish.html', {'dish_form': form, 'dish': dish})
+    return render(request, 'cafeteria/edit_dish.html', {'dish_form': form, 'dish': dish, 'note': note})
 
 
 @login_required
@@ -106,10 +109,11 @@ def menu_form(request):
     try:
         menu = Menu.objects.get(date=date)
         note = "Today's menu is ready"
+        # The admin will be aware that the menu has been sent to the employees
         if menu.notification_sent:
             note = "Employees has been notified with today's menu"
 
-        # Send async slack notification
+        # Send async slack notification if user press the button to send it
         if request.method == 'GET' and request.GET.get('slack'):
             try:
                 send_async_notification(f"{menu.detail}:\n{settings.HOST_URL}/menu/{menu.uuid}")
@@ -139,7 +143,7 @@ def menu_form(request):
         else:
             note = f'Menu could not be added, please try again!'
             have_errors = True
-        # Clean fields
+        # Clean menu to add a menu for another day
         form = MenuForm()
     return render(request, 'cafeteria/menu_form.html', {
         'menu_form': form,
@@ -156,9 +160,24 @@ def edit_menu(request, pk):
     if role != 'admin':
         return render(request, 'cafeteria/home.html')
 
+    # If the uuid is not valid, admin will be return to the menu view
+    try:
+        uuid = UUID(str(pk), version=4)
+        valid_uuid = pk.replace('-', '') == str(uuid).replace('-', '')
+    except TypeError as e:
+        logger.error(e)
+        valid_uuid = False
+    except ValueError as e:
+        logger.error(e)
+        valid_uuid = False
+
+    if not valid_uuid:
+        return menu_form(request)
+
     menu = get_object_or_404(Menu, pk=pk)
     form = MenuForm(instance=menu)
     if request.method == 'POST':
+        # Each time the menu is edited, the admin can notify employees with the new menu
         menu.notification_sent = False
         filled_form = MenuForm(request.POST, instance=menu)
         if filled_form.is_valid():
@@ -169,7 +188,6 @@ def edit_menu(request, pk):
             note = 'Menu was not updated, please try again'
         return render(request, 'cafeteria/edit_menu.html', {'menu_form': form, 'menu': menu, 'note': note})
     return render(request, 'cafeteria/edit_menu.html', {'menu_form': form, 'menu': menu})
-
 
 
 @login_required
@@ -203,9 +221,14 @@ def redirect_uuid(request):
         menu = Menu.objects.get(date=date)
         pk = menu.uuid
     except ObjectDoesNotExist as e:
+        logger.error(e)
         pass
     except MultipleObjectsReturned as e:
+        logger.error(e)
         pass
+    finally:
+        return redirect(order_uuid, pk)
+    # Employee will be redirected to an url with the uuid menu is exists for the current day
     return redirect(order_uuid, pk)
 
 
@@ -214,14 +237,35 @@ def order_uuid(request, pk):
     username = request.user.username
     user = User.objects.get(username=username)
 
+    # In case the menu has not been created or the uuid is not valid, the employee will be aware
+    try:
+        uuid = UUID(str(pk), version=4)
+        valid_uuid = pk.replace('-', '') == str(uuid).replace('-', '')
+    except TypeError as e:
+        logger.error(e)
+        valid_uuid = False
+    except ValueError as e:
+        logger.error(e)
+        valid_uuid = False
+
+    if not valid_uuid:
+        return order_not_found(request)
+
     menu = None
     try:
+        # Redirected to 404 page if the uuid is invalid
         menu = get_object_or_404(Menu, pk=pk)
     except ObjectDoesNotExist as e:
+        logger.error(e)
         pass
     except MultipleObjectsReturned as e:
+        logger.error(e)
         pass
     return order(request, user, menu, pk)
+
+
+def order_not_found(request):
+    return render(request, 'employee/order_not_found.html')
 
 
 def order(request, user, menu, pk):
@@ -232,15 +276,17 @@ def order(request, user, menu, pk):
     have_errors = False
     created_order = None
 
-    if not menu:
+    if menu is None:
         note = 'The menu has not been created yet!'
 
+    # This flag disable the form to order if the time is bigger than the allowed one
     enable_form = allow_order(settings.ALLOWED_HOUR_TO_ORDER)
 
     if request.method == 'GET':
         try:
             created_order = Order.objects.get(employee=user, created_at=date.strftime("%Y-%m-%d"))
             form = OrderForm(instance=created_order)
+            # Employees will see what they ordered
             note = f'You have ordered {created_order.dish.name}'
             if created_order.customizations and created_order.customizations.strip() != '':
                 note = f'{note} | {created_order.customizations.strip()}'
@@ -250,7 +296,8 @@ def order(request, user, menu, pk):
             note = 'There are more than 1 order, please contact Nora'
             have_errors = True
 
-        if not enable_form and not created_order:
+        # User will notice if they arrive to the order page after the allowed time
+        if enable_form is None and created_order is None:
             note = f'{_time.time().strftime("%H:%M:%S")} - Too late to order :('
             have_errors = True
 
@@ -263,7 +310,7 @@ def order(request, user, menu, pk):
             form.employee = user
             form.dish = dish
 
-            # Edit dish
+            # Users can edit they order before the limit allowed hour
             try:
                 created_order = Order.objects.get(employee=user, created_at=date.strftime("%Y-%m-%d"))
                 created_order.dish = dish
@@ -283,7 +330,8 @@ def order(request, user, menu, pk):
                 have_errors = True
                 logger.error(f"Error: {e}")
 
-            if not created_order:
+            # The users order will be created
+            if created_order is None:
                 try:
                     created_order = Order.objects.create(
                         dish=dish,
@@ -291,6 +339,7 @@ def order(request, user, menu, pk):
                         customizations=request.POST.get('customizations')
                     )
                     note = f'You have ordered {dish.name}!'
+                    # Display what the user just ordered with all customizations
                     if created_order.customizations and created_order.customizations.strip() != '':
                         note = f'{note} | {created_order.customizations.strip()}'
                 except Exception as e:

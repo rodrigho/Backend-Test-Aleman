@@ -1,7 +1,9 @@
 import uuid as uuid
+
 from django.contrib.auth.models import UserManager, AbstractUser, PermissionsMixin
 from django.db import models
 from django.utils.timezone import now, localtime
+
 
 ROLES = (
     ('admin', "Admin"),

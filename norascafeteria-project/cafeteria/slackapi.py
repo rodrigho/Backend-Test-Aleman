@@ -25,6 +25,7 @@ def send_async_notification(message):
         loop.run_until_complete(future)
     except SlackApiError as e:
         logger.error(f"Got an error: {e}")
+        # This will notify the admin that something is wrong with the slack configuration
         raise e
     except Exception as e:
         logger.error(f"Error {e}")

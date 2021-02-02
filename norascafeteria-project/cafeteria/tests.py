@@ -1,17 +1,16 @@
 from http import HTTPStatus
-
-from django.core import serializers
-from django.test import TestCase
 from uuid import UUID
+
+from django.test import TestCase
 from django.utils.timezone import now, localtime
 from django.db import IntegrityError
-from django.test import Client
 
 from .models import Dish, User, Menu, Order
 from .forms import DishForm, MenuForm, OrderForm
 
 
-# All Model tests
+"""All Model tests"""
+
 class UserTest(TestCase):
 
     def create_user(self, username="test", password="1234", first_name="Test", role="admin/employee"):
@@ -40,6 +39,7 @@ class DishTest(TestCase):
         dish = self.create_dish(name=name)
         self.assertTrue(isinstance(dish, Dish))
         self.assertEqual(dish.name, name)
+        # Verify the correct functionality of unique key
         with self.assertRaises(IntegrityError) as raise_context:
             self.create_dish(name)
             self.assertTrue('UNIQUE constraint failed' in raise_context.exception.message)
@@ -59,8 +59,10 @@ class MenuTest(TestCase):
         menu = self.create_menu()
         self.assertTrue(isinstance(menu, Menu))
         val_uuid = UUID(str(menu.uuid), version=4)
+        # Verifies the menu inserted have a valid uuid
         self.assertEqual(val_uuid.hex, str(menu.uuid).replace('-', ''))
         self.assertFalse(menu.notification_sent)
+        # Tests the unique key constraint to avoid having more than one menu for the same day
         with self.assertRaises(IntegrityError) as raise_context:
             self.create_menu()
             self.assertTrue('UNIQUE constraint failed' in raise_context.exception.message)
@@ -80,12 +82,14 @@ class OrderTest(TestCase):
         order = self.create_order()
         self.assertTrue(isinstance(order, Order))
         self.assertEqual(order.dish.name, "Premium chicken Salad and Dessert")
+        # Verifies user can not have more than one order for the same day
         with self.assertRaises(IntegrityError) as raise_context:
             self.create_order()
             self.assertTrue('UNIQUE constraint failed' in raise_context.exception.message)
 
 
-# All Form tests
+"""All Form tests"""
+
 class DishFormTest(TestCase):
 
     def test_valid_dish_form(self):
@@ -98,6 +102,7 @@ class DishFormTest(TestCase):
         data = {'name': dish.name}
         form = DishForm(data=data)
         self.assertFalse(form.is_valid())
+        # Verifies two or more dishes can not have the same name
         self.assertEqual(form.errors["name"], ["Dish with this Name already exists."])
 
 
@@ -116,6 +121,7 @@ class MenuFormTest(TestCase):
         self.assertEqual(form.errors["dishes"], ["This field is required."])
         data = {'date': localtime(now()).date(), 'detail': '', 'dishes': [{"name": "foo"}]}
         form = MenuForm(data=data)
+        # Test a valid constraint of dishes
         self.assertEqual(form.errors["dishes"], ["Enter a list of values."])
         self.assertEqual(form.errors["detail"], ["This field is required."])
 
@@ -128,6 +134,7 @@ class MenuFormTest(TestCase):
         dish = Dish.objects.create(name='foo')
         data = {'date': localtime(now()).date(), 'detail': 'None', 'dishes': [dish]}
         form = MenuForm(data=data)
+        # Avoid having more than one menu for the same day
         self.assertEqual(form.errors["date"], ["Menu with this Date already exists."])
 
 
@@ -143,13 +150,15 @@ class OrderFormTest(TestCase):
         data = {'dish': 'foo', 'customizations': ''}
         form = OrderForm(data=data)
         self.assertFalse(form.is_valid())
-        self.assertEqual(form.errors["dish"], ["Select a valid choice. That choice is not one of the available choices."])
+        self.assertEqual(form.errors["dish"],
+                         ["Select a valid choice. That choice is not one of the available choices."])
         data = {'dish': None, 'employee': 'test', 'customizations': ''}
         form = OrderForm(data=data)
         self.assertEqual(form.errors["dish"], ["This field is required."])
 
 
-# All View tests
+""" All View tests """
+
 class HomeViewTest(TestCase):
 
     def setUp(self):
@@ -162,6 +171,7 @@ class HomeViewTest(TestCase):
         response = self.client.get("/")
         self.assertEqual(response.status_code, HTTPStatus.OK)
         self.assertContains(response, "Nora's Cafeteria", html=True)
+        # Verifies the user is logged in
         self.assertContains(response, "Welcome, User Name", html=True)
 
         self.client.logout()
@@ -202,6 +212,7 @@ class MenuViewTest(TestCase):
 
         Dish.objects.create(name="Corn pie, Salad and Dessert")
         Dish.objects.create(name="Premium chicken Salad and Dessert")
+        # All dishes should be added after the menu is created, if not it gives an error
         self.menu = Menu()
         self.menu.detail = "Today's menu"
         self.menu.date = localtime(now()).date()
@@ -225,7 +236,9 @@ class MenuViewTest(TestCase):
         data = {'date': self.menu.date, 'detail': self.menu.detail, 'dishes': self.menu.dishes}
         response = self.client.post("/menu_form", data=data)
         self.assertEqual(response.status_code, HTTPStatus.OK)
+        # Test menu creation
         self.assertContains(response, "Today's Menu", html=True)
+        # Verifies both dishes were inserted in the menu
         self.assertContains(response, self.menu.dishes.first(), html=True)
         self.assertContains(response, self.menu.dishes.last(), html=True)
 
@@ -234,6 +247,7 @@ class MenuViewTest(TestCase):
         self.client.post("/menu_form", data=data)
         response = self.client.post("/menu_form", data=data)
         self.assertEqual(response.status_code, HTTPStatus.OK)
+        # Test that the menu can not be created if it is already created
         self.assertContains(response, "Menu could not be added, please try again!", html=True)
 
     def test_get_menu_edit_view(self):
@@ -245,6 +259,7 @@ class MenuViewTest(TestCase):
         data = {'date': self.menu.date, 'detail': 'No details', 'dishes': self.menu.dishes}
         response = self.client.post(f"/menu_form/{self.menu.uuid}", data=data)
         self.assertEqual(response.status_code, HTTPStatus.OK)
+        # Test the menu edition is some values are wrong
         self.assertContains(response, "Menu was not updated, please try again", html=True)
 
 
@@ -257,10 +272,13 @@ class SeeOrdersViewTest(TestCase):
         self.response = self.client.login(username='testuser', password='1234')
 
     def test_get_dish_view(self):
+        # Only the admin can see the employees' orders
         response = self.client.get("/see_orders")
         self.assertEqual(response.status_code, HTTPStatus.OK)
         self.assertContains(response, "Employees' orders for today", html=True)
         self.client.logout()
+        # If not ones is logged id in, it will find the page but not see the content
+        # and will be redirected to the home page
         response = self.client.get("/see_orders")
         self.assertEqual(response.status_code, HTTPStatus.FOUND)
 
@@ -294,27 +312,32 @@ class OrderViewTest(TestCase):
         order.employee = self.user
         order.dish = self.dish1
         order.save()
-
+        # Verifies correct order creation for the employee
         response = self.client.get(f"/menu/{self.menu.uuid}")
         self.assertEqual(response.status_code, HTTPStatus.OK)
+        # Users will be aware what they have ordered
         self.assertContains(response, "You have ordered Corn pie, Salad and Dessert", html=True)
 
     def test_post_request_order_view(self):
         data = {'dish': self.dish2, 'employee': self.user, 'customizations': 'No tomatoes'}
         response = self.client.post(f"/menu/{self.menu.uuid}", data=data)
         self.assertEqual(response.status_code, HTTPStatus.OK)
+        # Avoid users make a order without selecting a lunch option
         self.assertContains(response, "Please choose a dish!", html=True)
 
     def test_error_get_order_view(self):
         response = self.client.get(f"/menu/0371577c-e15a-4466-88a2-f54fcace18a6")
+        # If the uuid is incorrect, the user will get a 404 status
         self.assertEqual(response.status_code, HTTPStatus.NOT_FOUND)
         self.client.logout()
         response = self.client.get(f"/menu/{self.menu.uuid}")
+        # Test that the user is logged in to make an order
         self.assertEqual(response.status_code, HTTPStatus.FOUND)
 
     def test_error_post_order_view(self):
         data = {'dish': self.dish1, 'employee': self.user, 'customizations': 'No tomatoes'}
         response = self.client.post(f"/menu/0371577c-e15a-4466-88a2-f54fcace18a6", data=data)
+        # Verifies that users can not create an order for an invalid uuid
         self.assertEqual(response.status_code, HTTPStatus.NOT_FOUND)
         self.client.logout()
         response = self.client.post(f"/menu/{self.menu.uuid}", data=data)

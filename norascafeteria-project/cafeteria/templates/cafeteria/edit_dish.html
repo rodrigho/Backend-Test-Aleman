@@ -1,4 +1,4 @@
-{% extends 'cafeteria/base.html' %}
+{% extends 'common/base.html' %}
 
 {% block 'body' %}
 
@@ -15,16 +15,7 @@
                 <div class="form-group">
                 {{ field.errors }}
                 {{ field.label_tag }}
-                {% if field.name == 'date' %}
-                    <div class="input-group date" id="datetimepicker1" data-target-input="nearest">
-                      {{ field }}
-                      <div class="input-group-append" data-target="#datetimepicker1" data-toggle="datetimepicker">
-                        <div class="input-group-text"><i class="fa fa-calendar"></i></div>
-                      </div>
-                    </div>
-                {% else %}
-                    {% render_field field class="form-control" %}
-                {% endif %}
+                {% render_field field class="form-control" %}
                 </div>
             {% endfor %}
             <input type="submit" class="btn btn-danger" value="Edit dish">

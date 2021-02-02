@@ -1,4 +1,4 @@
-{% extends 'cafeteria/base.html' %}
+{% extends 'common/base.html' %}
 
 {% block 'body' %}
 
@@ -29,11 +29,9 @@
                       </div>
                     </div>
                 {% else %}
-
                     {% if field.name == 'dishes' %}
                         <a href="{% url 'dish_form' %}"> <i class="fa fa-commenting-o text-light fa-lg"></i> + Add more dishes?</a>
                         {% render_field field class="list-unstyled" multiple="multiple" %}
-
                     {% else %}
                         {% render_field field class="form-control" style="height:100px;" %}
                     {% endif %}
